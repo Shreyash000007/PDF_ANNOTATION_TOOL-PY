@@ -41,6 +41,7 @@
             position: absolute;
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
+            opacity: 0.7; /* Set transparency for all annotations */
         }
 
         .annotation:hover {
@@ -48,21 +49,24 @@
         }
 
         .annotation.highlight {
-            background-color: rgba(255, 255, 0, 0.4); /* Highlight Color */
+            background-color: rgba(255, 255, 0, 0.4); /* Transparent Highlight */
             filter: blur(1px);
         }
 
         .annotation.circle {
             border-radius: 50%;
+            border: 2px solid transparent;
+            background-color: rgba(0, 255, 0, 0.3); /* Transparent circle */
         }
 
         .annotation.underline {
             text-decoration: underline;
+            color: rgba(0, 0, 255, 0.5); /* Transparent underline */
         }
 
         .annotation.line {
             background-color: transparent;
-            border: 2px solid rgba(0, 255, 0, 0.7); /* Line Color */
+            border: 2px solid rgba(0, 255, 0, 0.7); /* Transparent line */
         }
 
         .controls {
