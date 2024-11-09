@@ -29,4 +29,38 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error("Error:", error);
         });
     });
+
+    // Handle the save button click
+    document.getElementById('save-btn').addEventListener('click', function() {
+        // Send annotation data to the server for saving
+        fetch('/api/save_annotations', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(annotations) 
+        })
+        .then(response => response.blob()) // Get the PDF blob from the response
+        .then(blob => {
+            // Create a blob URL for the downloaded PDF
+            const url = window.URL.createObjectURL(blob);
+
+            // Create a temporary link element to trigger the download
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'annotated.pdf'); 
+            document.body.appendChild(link);
+
+            // Trigger the download
+            link.click();
+
+            // Clean up: remove the link and revoke the blob URL
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url); 
+        })
+        .catch(error => {
+            console.error("Error saving annotations:", error);
+            alert("Error saving annotations. Please check the console for details.");
+        });
+    });
 });

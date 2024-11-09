@@ -194,6 +194,7 @@
 
     <div class="controls">
         <button id="undo-btn">Undo</button>
+        <button id="save-btn">Save</button> 
     </div>
 
     <div id="pdf-container"></div>
@@ -357,6 +358,33 @@
         // Undo button
         document.getElementById('undo-btn').addEventListener('click', function() {
             undo();
+        });
+
+        // Save button 
+        document.getElementById('save-btn').addEventListener('click', function() {
+            // Send annotation data to the server for saving
+            fetch('/save_pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(annotations)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                // Create a link to download the blob as a file
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'annotated.pdf';
+                document.body.appendChild(a);
+                a.click();
+                a.remove(); 
+            })
+            .catch(error => {
+                console.error("Error saving PDF:", error);
+                alert("Error saving PDF. Please try again.");
+            });
         });
 
         // Listen for file selection
