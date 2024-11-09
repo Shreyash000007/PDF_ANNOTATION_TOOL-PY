@@ -41,32 +41,28 @@
             position: absolute;
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
-            opacity: 0.7; /* Set transparency for all annotations */
-        }
-
-        .annotation:hover {
-            transform: scale(1.1);
+            opacity: 0.7;
         }
 
         .annotation.highlight {
-            background-color: rgba(255, 255, 0, 0.4); /* Transparent Highlight */
+            background-color: rgba(255, 255, 0, 0.4); 
             filter: blur(1px);
         }
 
         .annotation.circle {
             border-radius: 50%;
             border: 2px solid transparent;
-            background-color: rgba(0, 255, 0, 0.3); /* Transparent circle */
+            background-color: rgba(0, 255, 0, 0.3); 
         }
 
         .annotation.underline {
             text-decoration: underline;
-            color: rgba(0, 0, 255, 0.5); /* Transparent underline */
+            color: rgba(0, 0, 255, 0.5);
         }
 
         .annotation.line {
             background-color: transparent;
-            border: 2px solid rgba(0, 255, 0, 0.7); /* Transparent line */
+            border: 2px solid rgba(0, 255, 0, 0.7);
         }
 
         .controls {
@@ -141,7 +137,6 @@
             border-color: #3498db;
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             #pdf-container {
                 width: 95%;
@@ -173,7 +168,6 @@
         <input type="file" id="pdf-upload" accept="application/pdf" />
     </div>
 
-    <!-- Annotation Controls -->
     <div class="annotation-controls">
         <label for="annotation-type">Select Annotation Type:</label>
         <select id="annotation-type">
@@ -194,6 +188,7 @@
 
     <div class="controls">
         <button id="undo-btn">Undo</button>
+        <button id="save-btn">Save and Download PDF</button>
     </div>
 
     <div id="pdf-container"></div>
@@ -231,33 +226,28 @@
         // Render a single page from the PDF
         function renderPage(pageNumber) {
             pdfDoc.getPage(pageNumber).then(function(page) {
-                const scale = 1.5;  // Zoom scale
+                const scale = 1.5;
                 const viewport = page.getViewport({ scale: scale });
                 const container = document.getElementById('pdf-container');
 
-                // Create a div to hold the page (for styling purposes)
                 const pageContainer = document.createElement('div');
                 pageContainer.classList.add('pdf-page');
                 container.appendChild(pageContainer);
 
-                // Create a canvas element for this page
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 pageContainer.appendChild(canvas);
 
-                // Render the page on the canvas
                 page.render({
                     canvasContext: context,
                     viewport: viewport
                 }).promise.then(function() {
-                    // Render annotations for the current page
                     renderAnnotations(pageNumber);
                     document.getElementById('page-info').textContent = `Page ${currentPage} of ${pdfDoc.numPages}`;
                 });
 
-                // Listen for click and drag events to add annotations
                 canvas.addEventListener('click', function(e) {
                     const annotationType = document.getElementById('annotation-type').value;
                     const width = parseInt(document.getElementById('annotation-width').value, 10);
@@ -274,12 +264,10 @@
             });
         }
 
-        // Render annotations for a specific page
         function renderAnnotations(pageNumber) {
             const pageAnnotations = annotations[pageNumber] || [];
             const pageContainer = document.querySelectorAll('.pdf-page')[pageNumber - 1];
 
-            // Clear previous annotations
             pageContainer.querySelectorAll('.annotation').forEach(function(annotation) {
                 annotation.remove();
             });
@@ -287,59 +275,44 @@
             pageAnnotations.forEach(annotation => {
                 const annotationDiv = document.createElement('div');
                 annotationDiv.classList.add('annotation', annotation.type);
-                annotationDiv.style.left = annotation.position[0] + 'px';
-                annotationDiv.style.top = annotation.position[1] + 'px';
-                annotationDiv.style.width = annotation.position[2] + 'px';
-                annotationDiv.style.height = annotation.position[3] + 'px';
-                annotationDiv.style.backgroundColor = annotation.color;
-
+                annotationDiv.style.left = `${annotation.position.x}px`;
+                annotationDiv.style.top = `${annotation.position.y}px`;
+                annotationDiv.style.width = `${annotation.position.width}px`;
+                annotationDiv.style.height = `${annotation.position.height}px`;
+                annotationDiv.style.backgroundColor = annotation.color || 'rgba(255, 255, 0, 0.4)';
                 pageContainer.appendChild(annotationDiv);
             });
         }
 
-        // Add annotation to the page
         function addAnnotation(pageNumber, position, type, color) {
             if (!annotations[pageNumber]) {
                 annotations[pageNumber] = [];
             }
 
-            const annotation = {
-                type: type,
-                position: [position.x, position.y, position.width, position.height],
-                color: color,
-                filter: type === "highlight" ? "blur(2px)" : ""
-            };
-
+            const annotation = { type, position, color };
             annotations[pageNumber].push(annotation);
-            history.push({ action: 'add', page: pageNumber, annotation });
+
+            history.push({ action: 'add', pageNumber, annotation });
+
             renderAnnotations(pageNumber);
         }
 
-        // Undo last action
         function undo() {
-            if (history.length > 0) {
-                const lastAction = history.pop();
-                if (lastAction.action === 'add') {
-                    eraseAnnotation(lastAction.page, lastAction.annotation);
-                }
+            const lastAction = history.pop();
+            if (lastAction && lastAction.action === 'add') {
+                const { pageNumber, annotation } = lastAction;
+                annotations[pageNumber] = annotations[pageNumber].filter(a => a !== annotation);
+                renderAnnotations(pageNumber);
             }
         }
 
-        // Erase annotation from the page
-        function eraseAnnotation(pageNumber, annotationToRemove) {
-            if (!annotations[pageNumber]) return;
+        document.getElementById('pdf-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                loadPDF(file);
+            }
+        });
 
-            annotations[pageNumber] = annotations[pageNumber].filter(annotation => {
-                return !(annotation.position[0] === annotationToRemove.position[0] &&
-                         annotation.position[1] === annotationToRemove.position[1] &&
-                         annotation.position[2] === annotationToRemove.position[2] &&
-                         annotation.position[3] === annotationToRemove.position[3]);
-            });
-
-            renderAnnotations(pageNumber);
-        }
-
-        // Navigation buttons
         document.getElementById('prev-btn').addEventListener('click', function() {
             if (currentPage > 1) {
                 currentPage--;
@@ -354,20 +327,25 @@
             }
         });
 
-        // Undo button
-        document.getElementById('undo-btn').addEventListener('click', function() {
-            undo();
+        document.getElementById('undo-btn').addEventListener('click', undo);
+
+        document.getElementById('save-btn').addEventListener('click', function() {
+            const annotationsData = annotations;
+            fetch('/api/save_annotations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(annotationsData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Annotations saved:", data);
+                window.location.href = '/api/download_pdf';  // Trigger the PDF download
+            })
+            .catch(error => console.error("Error saving annotations:", error));
         });
 
-        // Listen for file selection
-        document.getElementById('pdf-upload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file && file.type === 'application/pdf') {
-                loadPDF(file); // Load the selected PDF
-            } else {
-                alert("Please select a valid PDF file.");
-            }
-        });
     </script>
 </body>
 </html>
