@@ -3,87 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Viewer with Annotations and Undo</title>
+    <title>PDF Viewer with User-Defined Annotations</title>
     <style>
+        /* General styles */
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f0f2f5;
+            background-color: #f4f7fa;
             margin: 0;
             padding: 0;
+            color: #333;
         }
 
         h1 {
             text-align: center;
-            color: #2C3E50;
-            margin: 20px 0;
+            color: #ffffff;
+            background-color: #3498db;
+            padding: 20px;
+            margin: 0;
             font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
+        /* Container styles */
         #pdf-container {
             width: 90%;
             max-width: 1200px;
-            margin: 20px auto;
+            margin: 30px auto;
             overflow-y: auto;
             position: relative;
-            border: 1px solid #ddd;
             border-radius: 10px;
-            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            background: #fff;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .pdf-page {
-            margin: 10px 0;
+            margin: 20px 0;
             position: relative;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
         }
 
+        /* Annotation styles */
         .annotation {
             position: absolute;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            opacity: 0.7; /* Set transparency for all annotations */
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0.8;
         }
 
         .annotation:hover {
             transform: scale(1.1);
+            opacity: 1;
         }
 
         .annotation.highlight {
-            background-color: rgba(255, 255, 0, 0.4); /* Transparent Highlight */
-            filter: blur(1px);
+            background-color: rgba(255, 255, 0, 0.4);
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.4);
         }
 
         .annotation.circle {
             border-radius: 50%;
-            border: 2px solid transparent;
-            background-color: rgba(0, 255, 0, 0.3); /* Transparent circle */
+            border: 3px solid rgba(0, 255, 0, 0.6);
+            background-color: rgba(0, 255, 0, 0.3);
         }
 
         .annotation.underline {
             text-decoration: underline;
-            color: rgba(0, 0, 255, 0.5); /* Transparent underline */
+            color: rgba(0, 0, 255, 0.7);
+            font-weight: bold;
         }
 
         .annotation.line {
+            border: 3px solid rgba(0, 255, 0, 0.6);
             background-color: transparent;
-            border: 2px solid rgba(0, 255, 0, 0.7); /* Transparent line */
         }
 
-        .controls {
+        /* Control buttons and navigation */
+        .controls, .zoom-controls, .annotation-controls, .page-navigation {
             text-align: center;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
 
         .controls input[type="file"] {
-            display: inline-block;
             padding: 12px 18px;
             font-size: 1rem;
-            color: #fff;
             background-color: #3498db;
+            color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s, transform 0.2s;
         }
 
         .controls input[type="file"]:hover {
@@ -92,14 +103,14 @@
         }
 
         .controls button {
-            margin-top: 10px;
-            padding: 15px 25px;
+            padding: 12px 20px;
+            font-size: 1rem;
             background-color: #e74c3c;
-            color: #fff;
+            color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s, transform 0.2s;
         }
 
         .controls button:hover {
@@ -107,53 +118,48 @@
             transform: scale(1.05);
         }
 
-        .page-navigation {
-            text-align: center;
-            margin-top: 20px;
+        .zoom-controls input[type="range"] {
+            width: 200px;
+            margin-top: 10px;
         }
 
-        .page-navigation span {
-            font-size: 1.2rem;
-            margin: 0 15px;
-            font-weight: bold;
-            color: #34495e;
+        .zoom-controls label {
+            font-size: 1rem;
         }
 
-        .annotation-controls {
-            text-align: center;
-            margin-top: 30px;
-        }
-
-        .annotation-controls select,
-        .annotation-controls input,
-        .annotation-controls input[type="color"] {
+        /* Annotation controls */
+        .annotation-controls select {
             font-size: 1rem;
             padding: 10px;
-            margin-right: 15px;
             border-radius: 8px;
-            border: 2px solid #ccc;
-            background-color: #fff;
-            transition: border-color 0.3s ease;
+            border: 2px solid #3498db;
+            background-color: #f8f9fa;
+            transition: border-color 0.3s;
         }
 
-        .annotation-controls select:focus,
-        .annotation-controls input:focus {
+        .annotation-controls select:focus {
             border-color: #3498db;
         }
 
-        /* Responsive Design */
+        .page-navigation button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .page-navigation button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Responsive styles */
         @media (max-width: 768px) {
             #pdf-container {
                 width: 95%;
                 margin: 10px auto;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .controls {
-                font-size: 0.9rem;
             }
 
             .controls button, .controls input[type="file"] {
@@ -161,19 +167,28 @@
                 padding: 15px;
                 font-size: 1.2rem;
             }
+
+            .page-navigation span {
+                font-size: 1rem;
+            }
+
+            .zoom-controls input[type="range"] {
+                width: 150px;
+            }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-    <h1>PDF Viewer with Annotations and Undo</h1>
+
+    <h1>PDF Viewer with User-Defined Annotations</h1>
 
     <div class="controls">
         <label for="pdf-upload">Select a PDF file:</label>
         <input type="file" id="pdf-upload" accept="application/pdf" />
     </div>
 
-    <!-- Annotation Controls -->
     <div class="annotation-controls">
         <label for="annotation-type">Select Annotation Type:</label>
         <select id="annotation-type">
@@ -182,19 +197,17 @@
             <option value="underline">Underline</option>
             <option value="line">Line</option>
         </select>
-        <br/>
-        <label for="annotation-width">Width:</label>
-        <input type="number" id="annotation-width" value="100" min="10" />
-        <label for="annotation-height">Height:</label>
-        <input type="number" id="annotation-height" value="20" min="10" />
-        <br/>
-        <label for="annotation-color">Select Color:</label>
-        <input type="color" id="annotation-color" value="#ff0000" />
     </div>
 
     <div class="controls">
         <button id="undo-btn">Undo</button>
-        <button id="save-btn">Save</button> 
+        <button id="clear-btn">Clear Annotations</button>
+        <button id="save-btn">Save as PDF</button>
+    </div>
+
+    <div class="zoom-controls">
+        <label for="zoom-range">Zoom: </label>
+        <input type="range" id="zoom-range" min="0.5" max="3" step="0.1" value="1" />
     </div>
 
     <div id="pdf-container"></div>
@@ -210,6 +223,13 @@
         let pdfDoc = null;
         let currentPage = 1;
         let history = []; // History to store actions for undo
+        let zoomLevel = 1.5; // Default zoom level
+        let isDrawing = false;
+        let currentAnnotation = null;
+        let isMoving = false;
+        let movingAnnotation = null;
+        let offsetX = 0;
+        let offsetY = 0;
 
         // Load the PDF from a file selected by the user
         function loadPDF(file) {
@@ -231,116 +251,248 @@
 
         // Render a single page from the PDF
         function renderPage(pageNumber) {
+            document.getElementById('pdf-container').innerHTML = '';
+
             pdfDoc.getPage(pageNumber).then(function(page) {
-                const scale = 1.5;  // Zoom scale
-                const viewport = page.getViewport({ scale: scale });
+                const viewport = page.getViewport({ scale: zoomLevel });
                 const container = document.getElementById('pdf-container');
 
-                // Create a div to hold the page (for styling purposes)
                 const pageContainer = document.createElement('div');
                 pageContainer.classList.add('pdf-page');
                 container.appendChild(pageContainer);
 
-                // Create a canvas element for this page
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 pageContainer.appendChild(canvas);
 
-                // Render the page on the canvas
                 page.render({
                     canvasContext: context,
                     viewport: viewport
                 }).promise.then(function() {
-                    // Render annotations for the current page
                     renderAnnotations(pageNumber);
                     document.getElementById('page-info').textContent = `Page ${currentPage} of ${pdfDoc.numPages}`;
                 });
 
-                // Listen for click and drag events to add annotations
-                canvas.addEventListener('click', function(e) {
-                    const annotationType = document.getElementById('annotation-type').value;
-                    const width = parseInt(document.getElementById('annotation-width').value, 10);
-                    const height = parseInt(document.getElementById('annotation-height').value, 10);
-                    const color = document.getElementById('annotation-color').value;
-
-                    const rect = canvas.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-
-                    const position = { x, y, width, height };
-                    addAnnotation(pageNumber, position, annotationType, color);
-                });
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', drawAnnotation);
+                canvas.addEventListener('mouseup', finishDrawing);
+                canvas.addEventListener('click', selectAnnotation);
             });
         }
 
-        // Render annotations for a specific page
+        // Start drawing the annotation
+        function startDrawing(e) {
+            if (isDrawing) return;
+            const annotationType = document.getElementById('annotation-type').value;
+
+            const rect = e.target.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            currentAnnotation = {
+                type: annotationType,
+                position: [x, y, 100, 20], // Default width and height for simplicity
+                color: 'rgba(255, 255, 0, 0.6)' // Default color (lighter yellow)
+            };
+            isDrawing = true;
+        }
+
+        // Draw the annotation while dragging the mouse
+        function drawAnnotation(e) {
+            if (!isDrawing) return;
+
+            const rect = e.target.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const width = x - currentAnnotation.position[0];
+            const height = y - currentAnnotation.position[1];
+
+            currentAnnotation.position[2] = width;
+            currentAnnotation.position[3] = height;
+
+            renderDrawingAnnotation(); // Render only the annotation during dragging
+        }
+
+        // Render the current annotation during drawing
+        function renderDrawingAnnotation() {
+            const container = document.getElementById('pdf-container');
+            const pageContainer = container.querySelectorAll('.pdf-page')[currentPage - 1];
+            const existingAnnotation = pageContainer.querySelector('.annotation.drawing');
+            if (existingAnnotation) existingAnnotation.remove(); // Remove any existing drawing
+
+            const annotationElement = document.createElement('div');
+            annotationElement.classList.add('annotation', 'drawing');
+            annotationElement.classList.add(currentAnnotation.type);
+            annotationElement.style.left = `${currentAnnotation.position[0]}px`;
+            annotationElement.style.top = `${currentAnnotation.position[1]}px`;
+            annotationElement.style.width = `${currentAnnotation.position[2]}px`;
+            annotationElement.style.height = `${currentAnnotation.position[3]}px`;
+            annotationElement.style.backgroundColor = currentAnnotation.color;
+            pageContainer.appendChild(annotationElement);
+        }
+
+        // Finish drawing the annotation
+        function finishDrawing() {
+            if (!isDrawing) return;
+
+            annotations[currentPage] = annotations[currentPage] || [];
+            annotations[currentPage].push(currentAnnotation);
+            history.push({ pageNumber: currentPage, action: 'add', annotation: currentAnnotation });
+
+            renderPage(currentPage); // Re-render the page with the new annotation
+
+            isDrawing = false;
+            currentAnnotation = null;
+        }
+
+        // Select an annotation by clicking on it
+        function selectAnnotation(e) {
+            const target = e.target;
+            if (target.classList.contains('annotation')) {
+                if (!isMoving) {
+                    target.classList.toggle('selected');
+                }
+                isMoving = !isMoving;
+                movingAnnotation = target;
+                offsetX = e.clientX - movingAnnotation.getBoundingClientRect().left;
+                offsetY = e.clientY - movingAnnotation.getBoundingClientRect().top;
+            }
+        }
+
+        // Move the annotation with mouse
+        function moveAnnotation(e) {
+            if (!isMoving || !movingAnnotation) return;
+
+            const rect = e.target.getBoundingClientRect();
+            const x = e.clientX - rect.left - offsetX;
+            const y = e.clientY - rect.top - offsetY;
+
+            movingAnnotation.style.left = `${x}px`;
+            movingAnnotation.style.top = `${y}px`;
+
+            const annotationIndex = annotations[currentPage].findIndex(annotation =>
+                annotation.position[0] === parseFloat(movingAnnotation.style.left.replace('px', '')) &&
+                annotation.position[1] === parseFloat(movingAnnotation.style.top.replace('px', ''))
+            );
+            if (annotationIndex !== -1) {
+                annotations[currentPage][annotationIndex].position = [x, y, movingAnnotation.style.width, movingAnnotation.style.height];
+            }
+        }
+
+        // Render all annotations for the current page
         function renderAnnotations(pageNumber) {
             const pageAnnotations = annotations[pageNumber] || [];
-            const pageContainer = document.querySelectorAll('.pdf-page')[pageNumber - 1];
+            const container = document.getElementById('pdf-container');
+            const pageContainer = container.querySelectorAll('.pdf-page')[pageNumber - 1];
 
-            // Clear previous annotations
-            pageContainer.querySelectorAll('.annotation').forEach(function(annotation) {
-                annotation.remove();
-            });
-
-            pageAnnotations.forEach(annotation => {
-                const annotationDiv = document.createElement('div');
-                annotationDiv.classList.add('annotation', annotation.type);
-                annotationDiv.style.left = annotation.position[0] + 'px';
-                annotationDiv.style.top = annotation.position[1] + 'px';
-                annotationDiv.style.width = annotation.position[2] + 'px';
-                annotationDiv.style.height = annotation.position[3] + 'px';
-                annotationDiv.style.backgroundColor = annotation.color;
-
-                pageContainer.appendChild(annotationDiv);
+            pageAnnotations.forEach(function(annotation) {
+                const annotationElement = document.createElement('div');
+                annotationElement.classList.add('annotation', annotation.type);
+                annotationElement.style.left = `${annotation.position[0]}px`;
+                annotationElement.style.top = `${annotation.position[1]}px`;
+                annotationElement.style.width = `${annotation.position[2]}px`;
+                annotationElement.style.height = `${annotation.position[3]}px`;
+                annotationElement.style.backgroundColor = annotation.color;
+                pageContainer.appendChild(annotationElement);
             });
         }
 
-        // Add annotation to the page
-        function addAnnotation(pageNumber, position, type, color) {
-            if (!annotations[pageNumber]) {
-                annotations[pageNumber] = [];
-            }
+        // Undo the last annotation action
+        function undoLastAction() {
+            if (history.length === 0) return;
 
-            const annotation = {
-                type: type,
-                position: [position.x, position.y, position.width, position.height],
-                color: color,
-                filter: type === "highlight" ? "blur(2px)" : ""
-            };
+            const lastAction = history.pop();
+            const pageNumber = lastAction.pageNumber;
 
-            annotations[pageNumber].push(annotation);
-            history.push({ action: 'add', page: pageNumber, annotation });
-            renderAnnotations(pageNumber);
-        }
+            if (lastAction.action === 'add') {
+                const annotationsOnPage = annotations[pageNumber];
+                annotationsOnPage.pop(); // Remove the last annotation
 
-        // Undo last action
-        function undo() {
-            if (history.length > 0) {
-                const lastAction = history.pop();
-                if (lastAction.action === 'add') {
-                    eraseAnnotation(lastAction.page, lastAction.annotation);
-                }
+                renderPage(pageNumber);
             }
         }
 
-        // Erase annotation from the page
-        function eraseAnnotation(pageNumber, annotationToRemove) {
-            if (!annotations[pageNumber]) return;
-
-            annotations[pageNumber] = annotations[pageNumber].filter(annotation => {
-                return !(annotation.position[0] === annotationToRemove.position[0] &&
-                         annotation.position[1] === annotationToRemove.position[1] &&
-                         annotation.position[2] === annotationToRemove.position[2] &&
-                         annotation.position[3] === annotationToRemove.position[3]);
-            });
-
-            renderAnnotations(pageNumber);
+        // Clear all annotations on the current page
+        function clearAnnotations() {
+            annotations[currentPage] = [];
+            renderPage(currentPage);
         }
 
-        // Navigation buttons
+        // Save PDF with annotations
+        async function savePDF() {
+            const { PDFDocument } = PDFLib;
+            const existingPdfBytes = await fetch(URL.createObjectURL(document.getElementById('pdf-upload').files[0])).then(res => res.arrayBuffer());
+
+            const pdfDoc = await PDFDocument.load(existingPdfBytes);
+            const pages = pdfDoc.getPages();
+
+            for (const [pageNum, pageAnnotations] of Object.entries(annotations)) {
+                const page = pages[parseInt(pageNum) - 1];
+
+                pageAnnotations.forEach(annotation => {
+                    const [x, y, width, height] = annotation.position;
+
+                    switch (annotation.type) {
+                        case 'highlight':
+                            page.drawRectangle({
+                                x: x,
+                                y: page.getHeight() - y - height,
+                                width: width,
+                                height: height,
+                                color: PDFLib.rgb(1, 1, 0), // Lighter Yellow
+                                opacity: 0.4
+                            });
+                            break;
+                        case 'circle':
+                            page.drawEllipse({
+                                x: x + width / 2,
+                                y: page.getHeight() - y - height / 2,
+                                width: width,
+                                height: height,
+                                color: PDFLib.rgb(0, 1, 0),
+                                borderColor: PDFLib.rgb(0, 1, 0),
+                                borderWidth: 2
+                            });
+                            break;
+                        case 'underline':
+                            page.drawLine({
+                                start: { x: x, y: page.getHeight() - (y + height) },
+                                end: { x: x + width, y: page.getHeight() - (y + height) },
+                                color: PDFLib.rgb(0, 0, 1),
+                                thickness: 2
+                            });
+                            break;
+                        case 'line':
+                            page.drawLine({
+                                start: { x: x, y: page.getHeight() - y },
+                                end: { x: x + width, y: page.getHeight() - (y + height) },
+                                color: PDFLib.rgb(0, 1, 0),
+                                thickness: 2
+                            });
+                            break;
+                    }
+                });
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'annotated.pdf';
+            link.click();
+        }
+
+        // Event listeners for buttons and navigation
+        document.getElementById('pdf-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                loadPDF(file);
+            }
+        });
+
         document.getElementById('prev-btn').addEventListener('click', function() {
             if (currentPage > 1) {
                 currentPage--;
@@ -355,47 +507,17 @@
             }
         });
 
-        // Undo button
-        document.getElementById('undo-btn').addEventListener('click', function() {
-            undo();
+        document.getElementById('zoom-range').addEventListener('input', function(e) {
+            zoomLevel = parseFloat(e.target.value);
+            renderPage(currentPage);
         });
 
-        // Save button 
-        document.getElementById('save-btn').addEventListener('click', function() {
-            // Send annotation data to the server for saving
-            fetch('/save_pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(annotations)
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                // Create a link to download the blob as a file
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'annotated.pdf';
-                document.body.appendChild(a);
-                a.click();
-                a.remove(); 
-            })
-            .catch(error => {
-                console.error("Error saving PDF:", error);
-                alert("Error saving PDF. Please try again.");
-            });
-        });
+        document.getElementById('undo-btn').addEventListener('click', undoLastAction);
+        document.getElementById('clear-btn').addEventListener('click', clearAnnotations);
+        document.getElementById('save-btn').addEventListener('click', savePDF);
 
-        // Listen for file selection
-        document.getElementById('pdf-upload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file && file.type === 'application/pdf') {
-                loadPDF(file); // Load the selected PDF
-            } else {
-                alert("Please select a valid PDF file.");
-            }
-        });
+        // Mouse move event for annotation movement
+        document.getElementById('pdf-container').addEventListener('mousemove', moveAnnotation);
     </script>
 </body>
 </html>
