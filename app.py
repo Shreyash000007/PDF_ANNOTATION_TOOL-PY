@@ -73,6 +73,5 @@ def save_pdf():
         app.logger.error(f"Error in save_pdf: {e}")
         return "Error saving PDF", 500
 
-
 if __name__ == '__main__':
     app.run(debug=True)
