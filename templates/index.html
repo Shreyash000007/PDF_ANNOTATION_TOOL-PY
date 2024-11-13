@@ -8,20 +8,21 @@
         /* General styles */
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f4f7fa;
+            background-color: #ecf0f1;
             margin: 0;
             padding: 0;
-            color: #333;
+            color: #2c3e50;
         }
 
         h1 {
             text-align: center;
             color: #ffffff;
-            background-color: #3498db;
+            background-color: #8e44ad;
             padding: 20px;
             margin: 0;
             font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.5s ease-in-out;
         }
 
         /* Container styles */
@@ -33,7 +34,9 @@
             position: relative;
             border-radius: 10px;
             background: #fff;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            animation: fadeIn 0.8s ease-out;
         }
 
         .pdf-page {
@@ -43,7 +46,14 @@
             border: 1px solid #ddd;
             border-radius: 10px;
             padding: 10px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
+
+        .pdf-page:hover {
+            transform: scale(1.02);
+        }
+
 
         /* Annotation styles */
         .annotation {
@@ -51,6 +61,7 @@
             cursor: pointer;
             transition: transform 0.3s ease, opacity 0.3s ease;
             opacity: 0.8;
+            animation: bounceIn 0.5s ease-out; 
         }
 
         .annotation:hover {
@@ -80,21 +91,40 @@
             background-color: transparent;
         }
 
+        /* Text annotation styles */
+        .annotation.text {
+            border: 2px dashed rgba(0, 0, 0, 0.6);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px;
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.8);
+            resize: both;
+            overflow: hidden;
+            word-wrap: break-word;
+            cursor: text;
+            animation: fadeInText 0.8s ease-out;
+        }
+
         /* Control buttons and navigation */
-        .controls, .zoom-controls, .annotation-controls, .page-navigation {
+       
+         .controls, .zoom-controls, .annotation-controls, .page-navigation {
             text-align: center;
             margin-top: 20px;
         }
 
-        .controls input[type="file"] {
-            padding: 12px 18px;
-            font-size: 1rem;
-            background-color: #3498db;
-            color: white;
-            border: none;
+        .controls input[type="file"], .controls button {
+            padding: 12px 20px;
+            font-size: 1.1rem;
             border-radius: 8px;
+            border: none;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.2s;
+            margin: 10px;
+        }
+
+        .controls input[type="file"] {
+            background-color: #3498db;
+            color: white;
         }
 
         .controls input[type="file"]:hover {
@@ -103,14 +133,8 @@
         }
 
         .controls button {
-            padding: 12px 20px;
-            font-size: 1rem;
             background-color: #e74c3c;
             color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
         }
 
         .controls button:hover {
@@ -135,12 +159,12 @@
             border: 2px solid #3498db;
             background-color: #f8f9fa;
             transition: border-color 0.3s;
+            margin: 10px;
         }
 
         .annotation-controls select:focus {
             border-color: #3498db;
         }
-
         .page-navigation button {
             padding: 10px 15px;
             background-color: #3498db;
@@ -149,10 +173,16 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin: 10px;
         }
 
         .page-navigation button:hover {
             background-color: #2980b9;
+        }
+          /* Hover effects for controls */
+          .controls input[type="file"]:hover, .controls button:hover, .page-navigation button:hover {
+            background-color: #f39c12;
+            transform: scale(1.1);
         }
 
         /* Responsive styles */
@@ -175,6 +205,7 @@
             .zoom-controls input[type="range"] {
                 width: 150px;
             }
+            
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
@@ -196,6 +227,7 @@
             <option value="circle">Circle</option>
             <option value="underline">Underline</option>
             <option value="line">Line</option>
+            <option value="text">Text</option> <!-- Added text annotation option -->
         </select>
     </div>
 
@@ -296,10 +328,30 @@
                 position: [x, y, 100, 20], // Default width and height for simplicity
                 color: 'rgba(255, 255, 0, 0.6)' // Default color (lighter yellow)
             };
-            isDrawing = true;
+
+            if (annotationType === 'text') {
+                // Add text-specific functionality
+                const textAnnotationElement = document.createElement('div');
+                textAnnotationElement.classList.add('annotation', 'text');
+                textAnnotationElement.style.left = `${currentAnnotation.position[0]}px`;
+                textAnnotationElement.style.top = `${currentAnnotation.position[1]}px`;
+                textAnnotationElement.contentEditable = true;
+                textAnnotationElement.innerText = "Enter text...";
+                textAnnotationElement.addEventListener('blur', function() {
+                    currentAnnotation.text = textAnnotationElement.innerText;
+                    annotations[currentPage]=annotations[currentPage] || [];
+                    annotations[currentPage].push(currentAnnotation)
+                    history.push({ pageNumber: currentPage, action: 'add', annotation: currentAnnotation });
+                    renderPage(currentPage)
+                });
+                
+                document.getElementById('pdf-container').appendChild(textAnnotationElement);
+            } else {
+                isDrawing = true;
+            }
         }
 
-        // Draw the annotation while dragging the mouse
+        // Render annotations while dragging the mouse
         function drawAnnotation(e) {
             if (!isDrawing) return;
 
@@ -395,7 +447,15 @@
                 annotationElement.style.top = `${annotation.position[1]}px`;
                 annotationElement.style.width = `${annotation.position[2]}px`;
                 annotationElement.style.height = `${annotation.position[3]}px`;
-                annotationElement.style.backgroundColor = annotation.color;
+                // annotationElement.style.backgroundColor = annotation.color;
+
+                if (annotation.type === 'text') {
+                    annotationElement.contentEditable = true;
+                    annotationElement.innerText = annotation.text || "Enter text...";
+                }
+                else {//
+                    annotationElement.style.backgroundColor = annotation.color; //
+                } //
                 pageContainer.appendChild(annotationElement);
             });
         }
@@ -434,48 +494,65 @@
 
                 pageAnnotations.forEach(annotation => {
                     const [x, y, width, height] = annotation.position;
+                                // Scale the annotations based on the zoom level
+            const scaledX = x / zoomLevel;
+            const scaledY = y / zoomLevel;
+            const scaledWidth = width / zoomLevel;
+            const scaledHeight = height / zoomLevel;
 
-                    switch (annotation.type) {
-                        case 'highlight':
-                            page.drawRectangle({
-                                x: x,
-                                y: page.getHeight() - y - height,
-                                width: width,
-                                height: height,
-                                color: PDFLib.rgb(1, 1, 0), // Lighter Yellow
-                                opacity: 0.4
-                            });
-                            break;
-                        case 'circle':
-                            page.drawEllipse({
-                                x: x + width / 2,
-                                y: page.getHeight() - y - height / 2,
-                                width: width,
-                                height: height,
-                                color: PDFLib.rgb(0, 1, 0),
-                                borderColor: PDFLib.rgb(0, 1, 0),
-                                borderWidth: 2
-                            });
-                            break;
+            switch (annotation.type) {
+                case 'highlight':
+                    page.drawRectangle({
+                        x: scaledX,
+                        y: page.getHeight() - scaledY - scaledHeight,
+                        width: scaledWidth,
+                        height: scaledHeight,
+                        color: PDFLib.rgb(1, 1, 0), // Lighter Yellow
+                        opacity: 0.2
+                    });
+                    break;
+                    case 'circle':
+                        page.drawEllipse({
+                            x: scaledX   + scaledWidth / 2,
+                            y: page.getHeight() - scaledY - scaledHeight / 2,
+                            width: scaledWidth,
+                            height: scaledHeight,
+                            color: PDFLib.rgb(1, 1, 0),
+                            borderColor: PDFLib.rgb(0, 1, 0),
+                            borderWidth: 2,
+                            opacity:0.2
+                        });
+                        break;
                         case 'underline':
                             page.drawLine({
-                                start: { x: x, y: page.getHeight() - (y + height) },
-                                end: { x: x + width, y: page.getHeight() - (y + height) },
+                                start: { x: scaledX, y: page.getHeight() - (scaledY + scaledHeight) },
+                                end: { x: scaledX + scaledWidth, y: page.getHeight() - (scaledY + scaledHeight) },
                                 color: PDFLib.rgb(0, 0, 1),
-                                thickness: 2
+                                thickness: 2,
+                                opacity: 0.2
                             });
                             break;
-                        case 'line':
-                            page.drawLine({
-                                start: { x: x, y: page.getHeight() - y },
-                                end: { x: x + width, y: page.getHeight() - (y + height) },
-                                color: PDFLib.rgb(0, 1, 0),
-                                thickness: 2
-                            });
-                            break;
-                    }
-                });
+                            case 'line':
+                                page.drawLine({
+                                    start: { x: scaledX, y: page.getHeight() - scaledY },
+                                    end: { x: scaledX + scaledWidth, y: page.getHeight() - (scaledY + scaledHeight) },
+                                    color: PDFLib.rgb(0, 1, 0),
+                                    thickness: 2,
+                                   
+                    });
+                    break;
+                case 'text':
+                    page.drawText(annotation.text, {
+                        x: scaledX,
+                        y: page.getHeight() - scaledY - scaledHeight,
+                        fontSize: 12,
+                        color: PDFLib.rgb(0, 0, 0),
+                        
+                    });
+                    break;
             }
+        });
+    }
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
